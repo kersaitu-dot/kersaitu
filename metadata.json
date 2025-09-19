@@ -1,0 +1,5 @@
+{
+  "name": "AI Photo Editor - Nano Banana",
+  "description": "An AI-powered photo editor that allows you to upload a photo and transform it by changing the subject's pose, the location, and the camera angle using the Gemini Nano Banana model.",
+  "requestFramePermissions": []
+}
