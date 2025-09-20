@@ -1,5 +1,5 @@
 // Fix: Import all types from the corrected `types.ts` file and remove the redundant `Option` interface.
-import { Pose, Location, CameraAngle, AspectRatio, Option, BlurAmount } from './types';
+import { Pose, Location, CameraAngle, AspectRatio, Option, BlurAmount, ResizeMode } from './types';
 
 export const POSE_OPTIONS: Option<Pose>[] = [
     { value: Pose.POWER, label: 'Pose Kuat' },
@@ -41,4 +41,15 @@ export const BLUR_AMOUNT_OPTIONS: Option<BlurAmount>[] = [
     { value: BlurAmount.SUBTLE, label: 'Halus' },
     { value: BlurAmount.MEDIUM, label: 'Sedang' },
     { value: BlurAmount.HEAVY, label: 'Kuat' }
+];
+
+export const RESIZE_MODE_OPTIONS: Option<ResizeMode>[] = [
+    { value: ResizeMode.LETTERBOX, label: 'Letterbox (Isi dengan Warna)' },
+    { value: ResizeMode.CROP, label: 'Pangkas untuk Mengisi' },
+];
+
+export const LETTERBOX_COLOR_OPTIONS: Option<string>[] = [
+    { value: 'black', label: 'Hitam' },
+    { value: 'white', label: 'Putih' },
+    { value: '#808080', label: 'Abu-abu' },
 ];

@@ -4,8 +4,8 @@ import { ImageUploader } from './components/ImageUploader';
 import { ControlPanel } from './components/ControlPanel';
 import { GeneratedImageDisplay } from './components/GeneratedImageDisplay';
 import { editImage } from './services/geminiService';
-import { Pose, Location, CameraAngle, AspectRatio, BlurAmount } from './types';
-import { POSE_OPTIONS, LOCATION_OPTIONS, CAMERA_ANGLE_OPTIONS, ASPECT_RATIO_OPTIONS, BLUR_AMOUNT_OPTIONS } from './constants';
+import { Pose, Location, CameraAngle, AspectRatio, BlurAmount, ResizeMode } from './types';
+import { POSE_OPTIONS, LOCATION_OPTIONS, CAMERA_ANGLE_OPTIONS, ASPECT_RATIO_OPTIONS, BLUR_AMOUNT_OPTIONS, RESIZE_MODE_OPTIONS, LETTERBOX_COLOR_OPTIONS } from './constants';
 import { MagicWandIcon } from './components/icons/MagicWandIcon';
 
 interface UploadedImage {
@@ -14,22 +14,27 @@ interface UploadedImage {
 }
 
 /**
- * Formats an image to a specific aspect ratio by letterboxing/pillarboxing it.
+ * Formats an image to a specific aspect ratio by either letterboxing/pillarboxing it or cropping it to fill.
  * @param imageSrc The base64 source of the image.
  * @param mimeType The MIME type of the image.
  * @param targetRatio The target aspect ratio string (e.g., '16:9').
+ * @param resizeMode The method to use for resizing ('letterbox' or 'crop').
+ * @param backgroundColor The color to use for the background if letterboxing.
  * @returns A promise that resolves to the new formatted image as an UploadedImage object.
  */
 const formatImageToAspectRatio = (
   imageSrc: string,
   mimeType: string,
-  targetRatio: AspectRatio
+  targetRatio: AspectRatio,
+  resizeMode: ResizeMode,
+  backgroundColor: string
 ): Promise<UploadedImage> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
-      const [targetWidth, targetHeight] = targetRatio.split(':').map(Number);
-      const targetAspectRatio = targetWidth / targetHeight;
+      const [targetWidthRatio, targetHeightRatio] = targetRatio.split(':').map(Number);
+      const targetAspectRatio = targetWidthRatio / targetHeightRatio;
+      const imageAspectRatio = img.width / img.height;
 
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
@@ -38,31 +43,50 @@ const formatImageToAspectRatio = (
       }
 
       // Use a consistent base width for the canvas for predictability
-      canvas.width = 1024;
-      canvas.height = 1024 / targetAspectRatio;
+      const outputWidth = 1024;
+      const outputHeight = 1024 / targetAspectRatio;
+      canvas.width = outputWidth;
+      canvas.height = outputHeight;
 
-      // Fill background with black
-      ctx.fillStyle = 'black';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      if (resizeMode === ResizeMode.CROP) {
+        let sx, sy, sWidth, sHeight;
 
-      // Calculate the dimensions to draw the image to fit within the canvas
-      const imageAspectRatio = img.width / img.height;
-      let drawWidth = canvas.width;
-      let drawHeight = canvas.height;
-      let x = 0;
-      let y = 0;
+        if (imageAspectRatio > targetAspectRatio) {
+          // Image is wider than target, crop horizontally (sides)
+          sHeight = img.height;
+          sWidth = img.height * targetAspectRatio;
+          sx = (img.width - sWidth) / 2;
+          sy = 0;
+        } else {
+          // Image is taller than target, crop vertically (top/bottom)
+          sWidth = img.width;
+          sHeight = img.width / targetAspectRatio;
+          sx = 0;
+          sy = (img.height - sHeight) / 2;
+        }
+        ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, outputWidth, outputHeight);
+      } else { // Letterbox mode
+        // Fill background
+        ctx.fillStyle = backgroundColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      if (imageAspectRatio > targetAspectRatio) {
-        // Image is wider than target, letterbox
-        drawHeight = canvas.width / imageAspectRatio;
-        y = (canvas.height - drawHeight) / 2;
-      } else {
-        // Image is taller than target, pillarbox
-        drawWidth = canvas.height * imageAspectRatio;
-        x = (canvas.width - drawWidth) / 2;
+        // Calculate the dimensions to draw the image to fit within the canvas
+        let drawWidth = canvas.width;
+        let drawHeight = canvas.height;
+        let x = 0;
+        let y = 0;
+
+        if (imageAspectRatio > targetAspectRatio) {
+          // Image is wider than target -> letterbox (bars on top/bottom)
+          drawHeight = canvas.width / imageAspectRatio;
+          y = (canvas.height - drawHeight) / 2;
+        } else {
+          // Image is taller than target -> pillarbox (bars on sides)
+          drawWidth = canvas.height * imageAspectRatio;
+          x = (canvas.width - drawWidth) / 2;
+        }
+        ctx.drawImage(img, x, y, drawWidth, drawHeight);
       }
-
-      ctx.drawImage(img, x, y, drawWidth, drawHeight);
 
       const base64 = canvas.toDataURL(mimeType).split(',')[1];
       resolve({ base64, mimeType });
@@ -85,6 +109,8 @@ const App: React.FC = () => {
   const [customCameraAngle, setCustomCameraAngle] = useState('');
   const [selectedAspectRatio, setSelectedAspectRatio] = useState<AspectRatio>(ASPECT_RATIO_OPTIONS[0].value);
   const [selectedBlur, setSelectedBlur] = useState<BlurAmount>(BLUR_AMOUNT_OPTIONS[0].value);
+  const [resizeMode, setResizeMode] = useState<ResizeMode>(ResizeMode.LETTERBOX);
+  const [letterboxColor, setLetterboxColor] = useState<string>(LETTERBOX_COLOR_OPTIONS[0].value);
   
   const [prompt, setPrompt] = useState<string>('');
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
@@ -98,30 +124,42 @@ const App: React.FC = () => {
     const aspectRatioText = selectedAspectRatio;
     const blurText = selectedBlur;
 
-    const newPrompt = `Take the subject and scene from the provided image and generate a new, photorealistic image based on the following instructions. The provided image has been placed into a ${aspectRatioText} frame and may contain black bars.
+    const introText = resizeMode === ResizeMode.LETTERBOX
+        ? `The provided image has been placed into a ${aspectRatioText} frame and may contain colored bars.`
+        : `The provided image has been cropped to fit a ${aspectRatioText} frame.`;
+
+    const sceneExpansionInstruction = resizeMode === ResizeMode.LETTERBOX
+        ? `1.  **Scene Expansion**: Your primary task is to replace any colored bars by intelligently and seamlessly extending the original scene. The final image MUST completely fill the target aspect ratio of ${aspectRatioText}. Do NOT add any new borders, padding, or bars. The composition must look natural as if it were originally shot in this format.`
+        : `1.  **Composition**: The final image must be a complete scene within the ${aspectRatioText} aspect ratio, using the provided cropped image as the main subject and compositional guide.`;
+    
+    const styleInstruction = resizeMode === ResizeMode.LETTERBOX
+        ? `The final result must be a high-resolution, incredibly detailed, and cinematic photograph that seamlessly integrates the original subject into the new, expanded scene. Ignore the colored bars in the source image and replace them with photographic content.`
+        : `The final result must be a high-resolution, incredibly detailed, and cinematic photograph that seamlessly integrates the original subject into the new scene.`;
+
+    const newPrompt = `Take the subject and scene from the provided image and generate a new, photorealistic image based on the following instructions. ${introText}
 
 **Key Instructions:**
-1.  **Scene Expansion**: Your primary task is to replace any black bars by intelligently and seamlessly extending the original scene. The final image MUST completely fill the target aspect ratio of ${aspectRatioText}. Do NOT add any new borders, padding, or black bars. The composition must look natural as if it were originally shot in this format.
+${sceneExpansionInstruction}
 2.  **New Setting**: Recreate the subject and place them in this new environment: ${locationText}.
 3.  **New Pose**: The subject's pose should be: ${poseText}.
 4.  **Camera Work**: The camera shot should be a ${cameraAngleText}.
 5.  **Background Blur**: The image should have ${blurText}. This creates a depth of field effect.
-6.  **Style**: The final result must be a high-resolution, incredibly detailed, and cinematic photograph that seamlessly integrates the original subject into the new, expanded scene. Ignore the black bars in the source image and replace them with photographic content.`;
+6.  **Style**: ${styleInstruction}`;
     setPrompt(newPrompt);
-  }, [selectedPose, selectedLocation, selectedCameraAngle, customPose, customLocation, customCameraAngle, selectedAspectRatio, selectedBlur]);
+  }, [selectedPose, selectedLocation, selectedCameraAngle, customPose, customLocation, customCameraAngle, selectedAspectRatio, selectedBlur, resizeMode]);
 
   // Effect to format the image whenever the original or aspect ratio changes
   useEffect(() => {
     if (originalImage) {
       const fullBase64 = `data:${originalImage.mimeType};base64,${originalImage.base64}`;
-      formatImageToAspectRatio(fullBase64, originalImage.mimeType, selectedAspectRatio)
+      formatImageToAspectRatio(fullBase64, originalImage.mimeType, selectedAspectRatio, resizeMode, letterboxColor)
         .then(setFormattedImageForApi)
         .catch(err => {
             console.error("Image formatting failed:", err);
             setError("Gagal memformat gambar untuk rasio aspek yang dipilih.");
         });
     }
-  }, [originalImage, selectedAspectRatio]);
+  }, [originalImage, selectedAspectRatio, resizeMode, letterboxColor]);
 
 
   const handleImageUpload = (file: File) => {
@@ -190,6 +228,10 @@ const App: React.FC = () => {
               onAspectRatioChange={setSelectedAspectRatio}
               selectedBlur={selectedBlur}
               onBlurChange={setSelectedBlur}
+              resizeMode={resizeMode}
+              onResizeModeChange={setResizeMode}
+              letterboxColor={letterboxColor}
+              onLetterboxColorChange={setLetterboxColor}
             />
 
             <div>

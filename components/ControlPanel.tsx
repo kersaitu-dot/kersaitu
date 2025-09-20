@@ -1,6 +1,6 @@
 import React from 'react';
-import { Pose, Location, CameraAngle, AspectRatio, BlurAmount } from '../types';
-import { POSE_OPTIONS, LOCATION_OPTIONS, CAMERA_ANGLE_OPTIONS, ASPECT_RATIO_OPTIONS, BLUR_AMOUNT_OPTIONS } from '../constants';
+import { Pose, Location, CameraAngle, AspectRatio, BlurAmount, ResizeMode } from '../types';
+import { POSE_OPTIONS, LOCATION_OPTIONS, CAMERA_ANGLE_OPTIONS, ASPECT_RATIO_OPTIONS, BLUR_AMOUNT_OPTIONS, RESIZE_MODE_OPTIONS, LETTERBOX_COLOR_OPTIONS } from '../constants';
 
 interface ControlPanelProps {
   selectedPose: Pose | 'CUSTOM';
@@ -19,6 +19,10 @@ interface ControlPanelProps {
   onAspectRatioChange: (aspectRatio: AspectRatio) => void;
   selectedBlur: BlurAmount;
   onBlurChange: (blur: BlurAmount) => void;
+  resizeMode: ResizeMode;
+  onResizeModeChange: (mode: ResizeMode) => void;
+  letterboxColor: string;
+  onLetterboxColorChange: (color: string) => void;
 }
 
 const CustomizableSelect = <T extends string>({ 
@@ -77,7 +81,11 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   selectedAspectRatio,
   onAspectRatioChange,
   selectedBlur,
-  onBlurChange
+  onBlurChange,
+  resizeMode,
+  onResizeModeChange,
+  letterboxColor,
+  onLetterboxColorChange
 }) => {
   return (
     <div className="space-y-4">
@@ -119,6 +127,32 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                 ))}
             </select>
         </div>
+        <div>
+            <label className="block text-sm font-medium text-purple-300 mb-2">Mode Penyesuaian Rasio</label>
+            <select
+                value={resizeMode}
+                onChange={(e) => onResizeModeChange(e.target.value as ResizeMode)}
+                className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition duration-200"
+            >
+                {RESIZE_MODE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+            </select>
+        </div>
+        {resizeMode === ResizeMode.LETTERBOX && (
+            <div>
+                <label className="block text-sm font-medium text-purple-300 mb-2">Warna Latar Letterbox</label>
+                <select
+                    value={letterboxColor}
+                    onChange={(e) => onLetterboxColorChange(e.target.value)}
+                    className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition duration-200"
+                >
+                    {LETTERBOX_COLOR_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                </select>
+            </div>
+        )}
         <div className="md:col-span-2">
             <label className="block text-sm font-medium text-purple-300 mb-2">Pilih Blur Latar Belakang</label>
             <select

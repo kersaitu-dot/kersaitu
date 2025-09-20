@@ -41,6 +41,11 @@ export enum BlurAmount {
     HEAVY = 'a heavy, creamy background blur (bokeh) where the background is indistinct, making the subject dramatically pop'
 }
 
+export enum ResizeMode {
+    LETTERBOX = 'letterbox',
+    CROP = 'crop'
+}
+
 
 export interface Option<T> {
   value: T;
