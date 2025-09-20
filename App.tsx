@@ -4,8 +4,8 @@ import { ImageUploader } from './components/ImageUploader';
 import { ControlPanel } from './components/ControlPanel';
 import { GeneratedImageDisplay } from './components/GeneratedImageDisplay';
 import { editImage } from './services/geminiService';
-import { Pose, Location, CameraAngle, AspectRatio } from './types';
-import { POSE_OPTIONS, LOCATION_OPTIONS, CAMERA_ANGLE_OPTIONS, ASPECT_RATIO_OPTIONS } from './constants';
+import { Pose, Location, CameraAngle, AspectRatio, BlurAmount } from './types';
+import { POSE_OPTIONS, LOCATION_OPTIONS, CAMERA_ANGLE_OPTIONS, ASPECT_RATIO_OPTIONS, BLUR_AMOUNT_OPTIONS } from './constants';
 import { MagicWandIcon } from './components/icons/MagicWandIcon';
 
 interface UploadedImage {
@@ -84,6 +84,7 @@ const App: React.FC = () => {
   const [selectedCameraAngle, setSelectedCameraAngle] = useState<CameraAngle | 'CUSTOM'>(CAMERA_ANGLE_OPTIONS[0].value);
   const [customCameraAngle, setCustomCameraAngle] = useState('');
   const [selectedAspectRatio, setSelectedAspectRatio] = useState<AspectRatio>(ASPECT_RATIO_OPTIONS[0].value);
+  const [selectedBlur, setSelectedBlur] = useState<BlurAmount>(BLUR_AMOUNT_OPTIONS[0].value);
   
   const [prompt, setPrompt] = useState<string>('');
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
@@ -95,6 +96,7 @@ const App: React.FC = () => {
     const locationText = selectedLocation === 'CUSTOM' ? customLocation : selectedLocation;
     const cameraAngleText = selectedCameraAngle === 'CUSTOM' ? customCameraAngle : selectedCameraAngle;
     const aspectRatioText = selectedAspectRatio;
+    const blurText = selectedBlur;
 
     const newPrompt = `Take the subject and scene from the provided image and generate a new, photorealistic image based on the following instructions. The provided image has been placed into a ${aspectRatioText} frame and may contain black bars.
 
@@ -103,9 +105,10 @@ const App: React.FC = () => {
 2.  **New Setting**: Recreate the subject and place them in this new environment: ${locationText}.
 3.  **New Pose**: The subject's pose should be: ${poseText}.
 4.  **Camera Work**: The camera shot should be a ${cameraAngleText}.
-5.  **Style**: The final result must be a high-resolution, incredibly detailed, and cinematic photograph that seamlessly integrates the original subject into the new, expanded scene. Ignore the black bars in the source image and replace them with photographic content.`;
+5.  **Background Blur**: The image should have ${blurText}. This creates a depth of field effect.
+6.  **Style**: The final result must be a high-resolution, incredibly detailed, and cinematic photograph that seamlessly integrates the original subject into the new, expanded scene. Ignore the black bars in the source image and replace them with photographic content.`;
     setPrompt(newPrompt);
-  }, [selectedPose, selectedLocation, selectedCameraAngle, customPose, customLocation, customCameraAngle, selectedAspectRatio]);
+  }, [selectedPose, selectedLocation, selectedCameraAngle, customPose, customLocation, customCameraAngle, selectedAspectRatio, selectedBlur]);
 
   // Effect to format the image whenever the original or aspect ratio changes
   useEffect(() => {
@@ -185,6 +188,8 @@ const App: React.FC = () => {
               onCustomCameraAngleChange={setCustomCameraAngle}
               selectedAspectRatio={selectedAspectRatio}
               onAspectRatioChange={setSelectedAspectRatio}
+              selectedBlur={selectedBlur}
+              onBlurChange={setSelectedBlur}
             />
 
             <div>

@@ -1,5 +1,5 @@
 // Fix: Import all types from the corrected `types.ts` file and remove the redundant `Option` interface.
-import { Pose, Location, CameraAngle, AspectRatio, Option } from './types';
+import { Pose, Location, CameraAngle, AspectRatio, Option, BlurAmount } from './types';
 
 export const POSE_OPTIONS: Option<Pose>[] = [
     { value: Pose.POWER, label: 'Pose Kuat' },
@@ -34,4 +34,11 @@ export const ASPECT_RATIO_OPTIONS: Option<AspectRatio>[] = [
     { value: AspectRatio.PORTRAIT_9_16, label: 'Potret (9:16)' },
     { value: AspectRatio.LANDSCAPE_16_9, label: 'Lanskap (16:9)' },
     { value: AspectRatio.LANDSCAPE_4_3, label: 'Lanskap (4:3)' }
+];
+
+export const BLUR_AMOUNT_OPTIONS: Option<BlurAmount>[] = [
+    { value: BlurAmount.NONE, label: 'Tanpa Blur' },
+    { value: BlurAmount.SUBTLE, label: 'Halus' },
+    { value: BlurAmount.MEDIUM, label: 'Sedang' },
+    { value: BlurAmount.HEAVY, label: 'Kuat' }
 ];

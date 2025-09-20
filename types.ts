@@ -34,6 +34,14 @@ export enum AspectRatio {
     LANDSCAPE_4_3 = '4:3'
 }
 
+export enum BlurAmount {
+    NONE = 'no background blur, the entire scene is in sharp focus',
+    SUBTLE = 'a subtle background blur (bokeh) to gently separate the subject from the background',
+    MEDIUM = 'a medium background blur (bokeh) for a clear separation and professional portrait look',
+    HEAVY = 'a heavy, creamy background blur (bokeh) where the background is indistinct, making the subject dramatically pop'
+}
+
+
 export interface Option<T> {
   value: T;
   label: string;

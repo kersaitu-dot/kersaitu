@@ -1,6 +1,6 @@
 import React from 'react';
-import { Pose, Location, CameraAngle, AspectRatio } from '../types';
-import { POSE_OPTIONS, LOCATION_OPTIONS, CAMERA_ANGLE_OPTIONS, ASPECT_RATIO_OPTIONS } from '../constants';
+import { Pose, Location, CameraAngle, AspectRatio, BlurAmount } from '../types';
+import { POSE_OPTIONS, LOCATION_OPTIONS, CAMERA_ANGLE_OPTIONS, ASPECT_RATIO_OPTIONS, BLUR_AMOUNT_OPTIONS } from '../constants';
 
 interface ControlPanelProps {
   selectedPose: Pose | 'CUSTOM';
@@ -17,6 +17,8 @@ interface ControlPanelProps {
   onCustomCameraAngleChange: (value: string) => void;
   selectedAspectRatio: AspectRatio;
   onAspectRatioChange: (aspectRatio: AspectRatio) => void;
+  selectedBlur: BlurAmount;
+  onBlurChange: (blur: BlurAmount) => void;
 }
 
 const CustomizableSelect = <T extends string>({ 
@@ -73,7 +75,9 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   customCameraAngle,
   onCustomCameraAngleChange,
   selectedAspectRatio,
-  onAspectRatioChange
+  onAspectRatioChange,
+  selectedBlur,
+  onBlurChange
 }) => {
   return (
     <div className="space-y-4">
@@ -111,6 +115,18 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                 className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition duration-200"
             >
                 {ASPECT_RATIO_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+            </select>
+        </div>
+        <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-purple-300 mb-2">Pilih Blur Latar Belakang</label>
+            <select
+                value={selectedBlur}
+                onChange={(e) => onBlurChange(e.target.value as BlurAmount)}
+                className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition duration-200"
+            >
+                {BLUR_AMOUNT_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>{option.label}</option>
                 ))}
             </select>
