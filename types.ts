@@ -26,6 +26,24 @@ export enum CameraAngle {
     WORM_S_EYE_VIEW = 'worm\'s-eye view, from the ground up'
 }
 
+export enum ClothingStyle {
+    KEBAYA = 'wearing a beautiful, elegant Kebaya',
+    T_SHIRT_JEANS = 'wearing a casual t-shirt and jeans',
+    FORMAL_SUIT = 'wearing a sharp, formal business suit',
+    SUMMER_DRESS = 'wearing a light and airy summer dress',
+    WINTER_COAT = 'wearing a warm winter coat and scarf'
+}
+
+export enum ArtisticStyle {
+    REALISTIC = 'photorealistic',
+    CARTOON = 'cartoon',
+    OIL_PAINTING = 'oil painting',
+    WATERCOLOR = 'watercolor painting',
+    ANIME_MANGA = 'anime/manga',
+    PIXEL_ART = 'pixel art',
+    LINE_ART = 'line art'
+}
+
 export enum AspectRatio {
     SQUARE = '1:1',
     PORTRAIT_4_5 = '4:5',
@@ -44,6 +62,16 @@ export enum BlurAmount {
 export enum ResizeMode {
     LETTERBOX = 'letterbox',
     CROP = 'crop'
+}
+
+export enum PictureQuality {
+    STANDARD = 'standard quality',
+    HIGH = 'high quality',
+    ULTRA_HIGH = 'ultra high quality',
+    ULTRA_HIGH_DETAIL = 'ultra high detail quality',
+    FULL_HD = 'Full HD (1080p) quality with sharp details',
+    FOUR_K = 'stunning 4K resolution with photorealistic detail',
+    EIGHT_K = 'cinematic 8K resolution with hyper-realistic detail'
 }
 
 

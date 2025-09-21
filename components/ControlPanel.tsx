@@ -1,6 +1,6 @@
 import React from 'react';
-import { Pose, Location, CameraAngle, AspectRatio, BlurAmount, ResizeMode } from '../types';
-import { POSE_OPTIONS, LOCATION_OPTIONS, CAMERA_ANGLE_OPTIONS, ASPECT_RATIO_OPTIONS, BLUR_AMOUNT_OPTIONS, RESIZE_MODE_OPTIONS, LETTERBOX_COLOR_OPTIONS } from '../constants';
+import { Pose, Location, CameraAngle, AspectRatio, BlurAmount, ResizeMode, ClothingStyle, PictureQuality, ArtisticStyle } from '../types';
+import { POSE_OPTIONS, LOCATION_OPTIONS, CAMERA_ANGLE_OPTIONS, ASPECT_RATIO_OPTIONS, BLUR_AMOUNT_OPTIONS, RESIZE_MODE_OPTIONS, LETTERBOX_COLOR_OPTIONS, CLOTHING_STYLE_OPTIONS, PICTURE_QUALITY_OPTIONS, ARTISTIC_STYLE_OPTIONS } from '../constants';
 
 interface ControlPanelProps {
   selectedPose: Pose | 'CUSTOM';
@@ -15,10 +15,20 @@ interface ControlPanelProps {
   onCameraAngleChange: (angle: CameraAngle | 'CUSTOM') => void;
   customCameraAngle: string;
   onCustomCameraAngleChange: (value: string) => void;
+  selectedClothingStyle: ClothingStyle | 'CUSTOM';
+  onClothingStyleChange: (style: ClothingStyle | 'CUSTOM') => void;
+  customClothingStyle: string;
+  onCustomClothingStyleChange: (value: string) => void;
+  selectedArtisticStyle: ArtisticStyle | 'CUSTOM';
+  onArtisticStyleChange: (style: ArtisticStyle | 'CUSTOM') => void;
+  customArtisticStyle: string;
+  onCustomArtisticStyleChange: (value: string) => void;
   selectedAspectRatio: AspectRatio;
   onAspectRatioChange: (aspectRatio: AspectRatio) => void;
   selectedBlur: BlurAmount;
   onBlurChange: (blur: BlurAmount) => void;
+  selectedQuality: PictureQuality;
+  onQualityChange: (quality: PictureQuality) => void;
   resizeMode: ResizeMode;
   onResizeModeChange: (mode: ResizeMode) => void;
   letterboxColor: string;
@@ -78,10 +88,20 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   onCameraAngleChange,
   customCameraAngle,
   onCustomCameraAngleChange,
+  selectedClothingStyle,
+  onClothingStyleChange,
+  customClothingStyle,
+  onCustomClothingStyleChange,
+  selectedArtisticStyle,
+  onArtisticStyleChange,
+  customArtisticStyle,
+  onCustomArtisticStyleChange,
   selectedAspectRatio,
   onAspectRatioChange,
   selectedBlur,
   onBlurChange,
+  selectedQuality,
+  onQualityChange,
   resizeMode,
   onResizeModeChange,
   letterboxColor,
@@ -98,6 +118,14 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           options={POSE_OPTIONS}
           customValue={customPose}
           onCustomValueChange={onCustomPoseChange}
+        />
+        <CustomizableSelect 
+          label="Pilih Gaya Busana" 
+          value={selectedClothingStyle} 
+          onChange={onClothingStyleChange} 
+          options={CLOTHING_STYLE_OPTIONS}
+          customValue={customClothingStyle}
+          onCustomValueChange={onCustomClothingStyleChange}
         />
         <CustomizableSelect 
           label="Pilih Lokasi" 
@@ -153,6 +181,28 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                 </select>
             </div>
         )}
+        <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-purple-300 mb-2">Pilih Kualitas Gambar</label>
+            <select
+                value={selectedQuality}
+                onChange={(e) => onQualityChange(e.target.value as PictureQuality)}
+                className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition duration-200"
+            >
+                {PICTURE_QUALITY_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+            </select>
+        </div>
+        <div className="md:col-span-2">
+            <CustomizableSelect
+              label="Pilih Gaya Artistik"
+              value={selectedArtisticStyle}
+              onChange={onArtisticStyleChange}
+              options={ARTISTIC_STYLE_OPTIONS}
+              customValue={customArtisticStyle}
+              onCustomValueChange={onCustomArtisticStyleChange}
+            />
+        </div>
         <div className="md:col-span-2">
             <label className="block text-sm font-medium text-purple-300 mb-2">Pilih Blur Latar Belakang</label>
             <select

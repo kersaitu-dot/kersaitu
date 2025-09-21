@@ -4,8 +4,8 @@ import { ImageUploader } from './components/ImageUploader';
 import { ControlPanel } from './components/ControlPanel';
 import { GeneratedImageDisplay } from './components/GeneratedImageDisplay';
 import { editImage } from './services/geminiService';
-import { Pose, Location, CameraAngle, AspectRatio, BlurAmount, ResizeMode } from './types';
-import { POSE_OPTIONS, LOCATION_OPTIONS, CAMERA_ANGLE_OPTIONS, ASPECT_RATIO_OPTIONS, BLUR_AMOUNT_OPTIONS, RESIZE_MODE_OPTIONS, LETTERBOX_COLOR_OPTIONS } from './constants';
+import { Pose, Location, CameraAngle, AspectRatio, BlurAmount, ResizeMode, ClothingStyle, PictureQuality, ArtisticStyle } from './types';
+import { POSE_OPTIONS, LOCATION_OPTIONS, CAMERA_ANGLE_OPTIONS, ASPECT_RATIO_OPTIONS, BLUR_AMOUNT_OPTIONS, RESIZE_MODE_OPTIONS, LETTERBOX_COLOR_OPTIONS, CLOTHING_STYLE_OPTIONS, PICTURE_QUALITY_OPTIONS, ARTISTIC_STYLE_OPTIONS } from './constants';
 import { MagicWandIcon } from './components/icons/MagicWandIcon';
 
 interface UploadedImage {
@@ -107,8 +107,13 @@ const App: React.FC = () => {
   const [customLocation, setCustomLocation] = useState('');
   const [selectedCameraAngle, setSelectedCameraAngle] = useState<CameraAngle | 'CUSTOM'>(CAMERA_ANGLE_OPTIONS[0].value);
   const [customCameraAngle, setCustomCameraAngle] = useState('');
+  const [selectedClothingStyle, setSelectedClothingStyle] = useState<ClothingStyle | 'CUSTOM'>(CLOTHING_STYLE_OPTIONS[0].value);
+  const [customClothingStyle, setCustomClothingStyle] = useState('');
+  const [selectedArtisticStyle, setSelectedArtisticStyle] = useState<ArtisticStyle | 'CUSTOM'>(ARTISTIC_STYLE_OPTIONS[0].value);
+  const [customArtisticStyle, setCustomArtisticStyle] = useState('');
   const [selectedAspectRatio, setSelectedAspectRatio] = useState<AspectRatio>(ASPECT_RATIO_OPTIONS[0].value);
   const [selectedBlur, setSelectedBlur] = useState<BlurAmount>(BLUR_AMOUNT_OPTIONS[0].value);
+  const [selectedQuality, setSelectedQuality] = useState<PictureQuality>(PICTURE_QUALITY_OPTIONS[1].value);
   const [resizeMode, setResizeMode] = useState<ResizeMode>(ResizeMode.LETTERBOX);
   const [letterboxColor, setLetterboxColor] = useState<string>(LETTERBOX_COLOR_OPTIONS[0].value);
   
@@ -121,8 +126,11 @@ const App: React.FC = () => {
     const poseText = selectedPose === 'CUSTOM' ? customPose : selectedPose;
     const locationText = selectedLocation === 'CUSTOM' ? customLocation : selectedLocation;
     const cameraAngleText = selectedCameraAngle === 'CUSTOM' ? customCameraAngle : selectedCameraAngle;
+    const clothingStyleText = selectedClothingStyle === 'CUSTOM' ? customClothingStyle : selectedClothingStyle;
+    const artisticStyleText = selectedArtisticStyle === 'CUSTOM' ? customArtisticStyle : selectedArtisticStyle;
     const aspectRatioText = selectedAspectRatio;
     const blurText = selectedBlur;
+    const qualityText = selectedQuality;
 
     const introText = resizeMode === ResizeMode.LETTERBOX
         ? `The provided image has been placed into a ${aspectRatioText} frame and may contain colored bars.`
@@ -132,21 +140,21 @@ const App: React.FC = () => {
         ? `1.  **Scene Expansion**: Your primary task is to replace any colored bars by intelligently and seamlessly extending the original scene. The final image MUST completely fill the target aspect ratio of ${aspectRatioText}. Do NOT add any new borders, padding, or bars. The composition must look natural as if it were originally shot in this format.`
         : `1.  **Composition**: The final image must be a complete scene within the ${aspectRatioText} aspect ratio, using the provided cropped image as the main subject and compositional guide.`;
     
-    const styleInstruction = resizeMode === ResizeMode.LETTERBOX
-        ? `The final result must be a high-resolution, incredibly detailed, and cinematic photograph that seamlessly integrates the original subject into the new, expanded scene. Ignore the colored bars in the source image and replace them with photographic content.`
-        : `The final result must be a high-resolution, incredibly detailed, and cinematic photograph that seamlessly integrates the original subject into the new scene.`;
-
-    const newPrompt = `Take the subject and scene from the provided image and generate a new, photorealistic image based on the following instructions. ${introText}
+    const newPrompt = `Take the subject and scene from the provided image and generate a new image based on the following instructions. ${introText}
 
 **Key Instructions:**
 ${sceneExpansionInstruction}
 2.  **New Setting**: Recreate the subject and place them in this new environment: ${locationText}.
 3.  **New Pose**: The subject's pose should be: ${poseText}.
-4.  **Camera Work**: The camera shot should be a ${cameraAngleText}.
-5.  **Background Blur**: The image should have ${blurText}. This creates a depth of field effect.
-6.  **Style**: ${styleInstruction}`;
+4.  **Clothing**: The subject should now be ${clothingStyleText}.
+5.  **Camera Work**: The camera shot should be a ${cameraAngleText}.
+6.  **Background Blur**: The image should have ${blurText}. This creates a depth of field effect.
+7.  **Artistic Style**: The final image must be in a ${artisticStyleText} style.
+8.  **Quality**: Render the final image in ${qualityText}.
+
+If the original image was letterboxed (contains colored bars), your primary task is to replace the bars by seamlessly extending the original scene. The final image must completely fill the target aspect ratio without any new borders.`;
     setPrompt(newPrompt);
-  }, [selectedPose, selectedLocation, selectedCameraAngle, customPose, customLocation, customCameraAngle, selectedAspectRatio, selectedBlur, resizeMode]);
+  }, [selectedPose, selectedLocation, selectedCameraAngle, selectedClothingStyle, customPose, customLocation, customCameraAngle, customClothingStyle, selectedAspectRatio, selectedBlur, selectedQuality, resizeMode, selectedArtisticStyle, customArtisticStyle]);
 
   // Effect to format the image whenever the original or aspect ratio changes
   useEffect(() => {
@@ -199,7 +207,9 @@ ${sceneExpansionInstruction}
   const isCustomInvalid = 
     (selectedPose === 'CUSTOM' && !customPose.trim()) ||
     (selectedLocation === 'CUSTOM' && !customLocation.trim()) ||
-    (selectedCameraAngle === 'CUSTOM' && !customCameraAngle.trim());
+    (selectedCameraAngle === 'CUSTOM' && !customCameraAngle.trim()) ||
+    (selectedClothingStyle === 'CUSTOM' && !customClothingStyle.trim()) ||
+    (selectedArtisticStyle === 'CUSTOM' && !customArtisticStyle.trim());
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-200 font-sans">
@@ -224,10 +234,20 @@ ${sceneExpansionInstruction}
               onCameraAngleChange={setSelectedCameraAngle}
               customCameraAngle={customCameraAngle}
               onCustomCameraAngleChange={setCustomCameraAngle}
+              selectedClothingStyle={selectedClothingStyle}
+              onClothingStyleChange={setSelectedClothingStyle}
+              customClothingStyle={customClothingStyle}
+              onCustomClothingStyleChange={setCustomClothingStyle}
+              selectedArtisticStyle={selectedArtisticStyle}
+              onArtisticStyleChange={setSelectedArtisticStyle}
+              customArtisticStyle={customArtisticStyle}
+              onCustomArtisticStyleChange={setCustomArtisticStyle}
               selectedAspectRatio={selectedAspectRatio}
               onAspectRatioChange={setSelectedAspectRatio}
               selectedBlur={selectedBlur}
               onBlurChange={setSelectedBlur}
+              selectedQuality={selectedQuality}
+              onQualityChange={setSelectedQuality}
               resizeMode={resizeMode}
               onResizeModeChange={setResizeMode}
               letterboxColor={letterboxColor}
@@ -254,7 +274,7 @@ ${sceneExpansionInstruction}
               className="w-full flex items-center justify-center bg-purple-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-purple-700 disabled:bg-gray-500 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105 shadow-lg"
             >
               {isLoading ? (
-                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
