@@ -236,6 +236,10 @@ If the original image was letterboxed (contains colored bars), your primary task
       setGeneratedImage(null);
       setError(null);
     };
+    reader.onerror = () => {
+        console.error("Error reading file:", reader.error);
+        setError("Gagal membaca file gambar. Pastikan file tidak rusak dan coba lagi.");
+    };
     reader.readAsDataURL(file);
   };
   
@@ -252,24 +256,25 @@ If the original image was letterboxed (contains colored bars), your primary task
     setIsSensitiveContentVisible(false);
 
     try {
-      const { image, safetyRatings, textResponse } = await editImage(formattedImageForApi.base64, formattedImageForApi.mimeType, prompt);
+      const { image, safetyRatings } = await editImage(formattedImageForApi.base64, formattedImageForApi.mimeType, prompt);
       
-      if (image) {
-        setGeneratedImage(image);
-        const isSensitive = isContentSensitive(safetyRatings);
-        setImageIsSensitive(isSensitive);
-      } else {
-        const errorMessage = textResponse ? `Model response: ${textResponse}` : 'No image data found in the API response.';
-        throw new Error(errorMessage);
-      }
+      setGeneratedImage(image);
+      const isSensitive = isContentSensitive(safetyRatings);
+      setImageIsSensitive(isSensitive);
 
     } catch (err) {
-      console.error(err);
+      console.error("An error occurred during image generation:", err);
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan saat membuat gambar.');
     } finally {
       setIsLoading(false);
     }
   }, [originalImage, formattedImageForApi, prompt]);
+
+  const handleDeleteGeneratedImage = () => {
+    setGeneratedImage(null);
+    setImageIsSensitive(false);
+    setIsSensitiveContentVisible(false);
+  };
 
   const isCustomInvalid = 
     (selectedPose === 'CUSTOM' && !customPose.trim()) ||
@@ -364,6 +369,7 @@ If the original image was letterboxed (contains colored bars), your primary task
             isSensitive={imageIsSensitive}
             isSensitiveContentVisible={isSensitiveContentVisible}
             onToggleVisibility={() => setIsSensitiveContentVisible(!isSensitiveContentVisible)}
+            onDeleteImage={handleDeleteGeneratedImage}
           />
 
         </div>

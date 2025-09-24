@@ -3,6 +3,7 @@ import { ImageIcon } from './icons/ImageIcon';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { EyeIcon } from './icons/EyeIcon';
 import { EyeOffIcon } from './icons/EyeOffIcon';
+import { TrashIcon } from './icons/TrashIcon';
 
 interface GeneratedImageDisplayProps {
   isLoading: boolean;
@@ -11,6 +12,7 @@ interface GeneratedImageDisplayProps {
   isSensitive: boolean;
   isSensitiveContentVisible: boolean;
   onToggleVisibility: () => void;
+  onDeleteImage: () => void;
 }
 
 const LoadingSkeleton: React.FC = () => (
@@ -52,7 +54,8 @@ export const GeneratedImageDisplay: React.FC<GeneratedImageDisplayProps> = ({
     aspectRatio,
     isSensitive,
     isSensitiveContentVisible,
-    onToggleVisibility
+    onToggleVisibility,
+    onDeleteImage
 }) => {
   
   const aspectRatioClass = getAspectRatioClass(aspectRatio);
@@ -109,14 +112,24 @@ export const GeneratedImageDisplay: React.FC<GeneratedImageDisplayProps> = ({
             )}
             
             {(isSensitiveContentVisible || !isSensitive) && (
-              <button
-                onClick={handleSaveImage}
-                className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center bg-purple-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg z-10"
-                aria-label="Simpan gambar"
-              >
-                <DownloadIcon className="h-5 w-5 mr-2" />
-                Simpan Gambar
-              </button>
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-4 z-10">
+                <button
+                  onClick={handleSaveImage}
+                  className="flex items-center bg-purple-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
+                  aria-label="Simpan gambar"
+                >
+                  <DownloadIcon className="h-5 w-5 mr-2" />
+                  Simpan
+                </button>
+                <button
+                  onClick={onDeleteImage}
+                  className="flex items-center bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
+                  aria-label="Hapus gambar"
+                >
+                  <TrashIcon className="h-5 w-5 mr-2" />
+                  Hapus
+                </button>
+              </div>
             )}
           </>
         ) : (
