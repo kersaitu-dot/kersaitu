@@ -1,6 +1,6 @@
 import React from 'react';
-import { Pose, Location, CameraAngle, AspectRatio, BlurAmount, ResizeMode, ClothingStyle, PictureQuality, ArtisticStyle } from '../types';
-import { POSE_OPTIONS, LOCATION_OPTIONS, CAMERA_ANGLE_OPTIONS, ASPECT_RATIO_OPTIONS, BLUR_AMOUNT_OPTIONS, RESIZE_MODE_OPTIONS, LETTERBOX_COLOR_OPTIONS, CLOTHING_STYLE_OPTIONS, PICTURE_QUALITY_OPTIONS, ARTISTIC_STYLE_OPTIONS } from '../constants';
+import { Pose, Location, CameraAngle, AspectRatio, BlurAmount, ResizeMode, ClothingStyle, PictureQuality, ArtisticStyle, HairStyle } from '../types';
+import { POSE_OPTIONS, LOCATION_OPTIONS, CAMERA_ANGLE_OPTIONS, ASPECT_RATIO_OPTIONS, BLUR_AMOUNT_OPTIONS, RESIZE_MODE_OPTIONS, LETTERBOX_COLOR_OPTIONS, CLOTHING_STYLE_OPTIONS, PICTURE_QUALITY_OPTIONS, ARTISTIC_STYLE_OPTIONS, HAIR_STYLE_OPTIONS } from '../constants';
 
 interface ControlPanelProps {
   selectedPose: Pose | 'CUSTOM';
@@ -23,6 +23,10 @@ interface ControlPanelProps {
   onArtisticStyleChange: (style: ArtisticStyle | 'CUSTOM') => void;
   customArtisticStyle: string;
   onCustomArtisticStyleChange: (value: string) => void;
+  selectedHairStyle: HairStyle | 'CUSTOM';
+  onHairStyleChange: (style: HairStyle | 'CUSTOM') => void;
+  customHairStyle: string;
+  onCustomHairStyleChange: (value: string) => void;
   selectedAspectRatio: AspectRatio;
   onAspectRatioChange: (aspectRatio: AspectRatio) => void;
   selectedBlur: BlurAmount;
@@ -96,6 +100,10 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   onArtisticStyleChange,
   customArtisticStyle,
   onCustomArtisticStyleChange,
+  selectedHairStyle,
+  onHairStyleChange,
+  customHairStyle,
+  onCustomHairStyleChange,
   selectedAspectRatio,
   onAspectRatioChange,
   selectedBlur,
@@ -126,6 +134,14 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           options={CLOTHING_STYLE_OPTIONS}
           customValue={customClothingStyle}
           onCustomValueChange={onCustomClothingStyleChange}
+        />
+        <CustomizableSelect
+          label="Gaya Rambut/Jilbab"
+          value={selectedHairStyle}
+          onChange={onHairStyleChange}
+          options={HAIR_STYLE_OPTIONS}
+          customValue={customHairStyle}
+          onCustomValueChange={onCustomHairStyleChange}
         />
         <CustomizableSelect 
           label="Pilih Lokasi" 

@@ -4,9 +4,12 @@ import { ImageUploader } from './components/ImageUploader';
 import { ControlPanel } from './components/ControlPanel';
 import { GeneratedImageDisplay } from './components/GeneratedImageDisplay';
 import { editImage } from './services/geminiService';
-import { Pose, Location, CameraAngle, AspectRatio, BlurAmount, ResizeMode, ClothingStyle, PictureQuality, ArtisticStyle } from './types';
-import { POSE_OPTIONS, LOCATION_OPTIONS, CAMERA_ANGLE_OPTIONS, ASPECT_RATIO_OPTIONS, BLUR_AMOUNT_OPTIONS, RESIZE_MODE_OPTIONS, LETTERBOX_COLOR_OPTIONS, CLOTHING_STYLE_OPTIONS, PICTURE_QUALITY_OPTIONS, ARTISTIC_STYLE_OPTIONS } from './constants';
+import { Pose, Location, CameraAngle, AspectRatio, BlurAmount, ResizeMode, ClothingStyle, PictureQuality, ArtisticStyle, HairStyle } from './types';
+import { POSE_OPTIONS, LOCATION_OPTIONS, CAMERA_ANGLE_OPTIONS, ASPECT_RATIO_OPTIONS, BLUR_AMOUNT_OPTIONS, RESIZE_MODE_OPTIONS, LETTERBOX_COLOR_OPTIONS, CLOTHING_STYLE_OPTIONS, PICTURE_QUALITY_OPTIONS, ARTISTIC_STYLE_OPTIONS, HAIR_STYLE_OPTIONS } from './constants';
 import { MagicWandIcon } from './components/icons/MagicWandIcon';
+import type { SafetyRating } from '@google/genai';
+import { HarmCategory, HarmProbability } from '@google/genai';
+
 
 interface UploadedImage {
   base64: string;
@@ -96,6 +99,23 @@ const formatImageToAspectRatio = (
   });
 };
 
+const isContentSensitive = (safetyRatings: SafetyRating[] | undefined): boolean => {
+    if (!safetyRatings) {
+        return false;
+    }
+    const sexuallyExplicitRating = safetyRatings.find(
+        (rating) => rating.category === HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT
+    );
+    if (
+        sexuallyExplicitRating &&
+        (sexuallyExplicitRating.probability === HarmProbability.MEDIUM ||
+         sexuallyExplicitRating.probability === HarmProbability.HIGH)
+    ) {
+        return true;
+    }
+    return false;
+};
+
 
 const App: React.FC = () => {
   const [originalImage, setOriginalImage] = useState<UploadedImage | null>(null);
@@ -111,6 +131,8 @@ const App: React.FC = () => {
   const [customClothingStyle, setCustomClothingStyle] = useState('');
   const [selectedArtisticStyle, setSelectedArtisticStyle] = useState<ArtisticStyle | 'CUSTOM'>(ARTISTIC_STYLE_OPTIONS[0].value);
   const [customArtisticStyle, setCustomArtisticStyle] = useState('');
+  const [selectedHairStyle, setSelectedHairStyle] = useState<HairStyle | 'CUSTOM'>(HAIR_STYLE_OPTIONS[0].value);
+  const [customHairStyle, setCustomHairStyle] = useState('');
   const [selectedAspectRatio, setSelectedAspectRatio] = useState<AspectRatio>(ASPECT_RATIO_OPTIONS[0].value);
   const [selectedBlur, setSelectedBlur] = useState<BlurAmount>(BLUR_AMOUNT_OPTIONS[0].value);
   const [selectedQuality, setSelectedQuality] = useState<PictureQuality>(PICTURE_QUALITY_OPTIONS[1].value);
@@ -121,6 +143,9 @@ const App: React.FC = () => {
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [imageIsSensitive, setImageIsSensitive] = useState<boolean>(false);
+  const [isSensitiveContentVisible, setIsSensitiveContentVisible] = useState<boolean>(false);
+
 
   useEffect(() => {
     const poseText = selectedPose === 'CUSTOM' ? customPose : selectedPose;
@@ -140,21 +165,52 @@ const App: React.FC = () => {
         ? `1.  **Scene Expansion**: Your primary task is to replace any colored bars by intelligently and seamlessly extending the original scene. The final image MUST completely fill the target aspect ratio of ${aspectRatioText}. Do NOT add any new borders, padding, or bars. The composition must look natural as if it were originally shot in this format.`
         : `1.  **Composition**: The final image must be a complete scene within the ${aspectRatioText} aspect ratio, using the provided cropped image as the main subject and compositional guide.`;
     
+    const instructions = [
+        `**New Setting**: Recreate the subject and place them in this new environment: ${locationText}.`,
+        `**New Pose**: The subject's pose should be: ${poseText}.`,
+        `**Clothing**: The subject should now be ${clothingStyleText}.`
+    ];
+
+    let hairInstruction = '';
+    if (selectedHairStyle === 'CUSTOM' && customHairStyle.trim()) {
+      hairInstruction = `**Hair/Hijab**: The subject's hair/hijab style should be: ${customHairStyle.trim()}.`;
+    } else if (selectedHairStyle === HairStyle.KEEP_ORIGINAL) {
+      hairInstruction = `**Hair/Hijab**: It is critically important to preserve the subject's original hair or head covering (e.g., hijab) exactly as it appears in the provided image. Do not change its style, color, or form.`;
+    }
+    
+    if (hairInstruction) {
+        instructions.push(hairInstruction);
+    }
+    
+    instructions.push(
+      `**Camera Work**: The camera shot should be a ${cameraAngleText}.`,
+      `**Background Blur**: The image should have ${blurText}. This creates a depth of field effect.`,
+      `**Artistic Style**: The final image must be in a ${artisticStyleText} style.`,
+      `**Quality**: Render the final image in ${qualityText}.`
+    );
+    
+    const numberedInstructions = instructions.map((instruction, index) => `${index + 2}.  ${instruction}`).join('\n');
+
     const newPrompt = `Take the subject and scene from the provided image and generate a new image based on the following instructions. ${introText}
 
 **Key Instructions:**
 ${sceneExpansionInstruction}
-2.  **New Setting**: Recreate the subject and place them in this new environment: ${locationText}.
-3.  **New Pose**: The subject's pose should be: ${poseText}.
-4.  **Clothing**: The subject should now be ${clothingStyleText}.
-5.  **Camera Work**: The camera shot should be a ${cameraAngleText}.
-6.  **Background Blur**: The image should have ${blurText}. This creates a depth of field effect.
-7.  **Artistic Style**: The final image must be in a ${artisticStyleText} style.
-8.  **Quality**: Render the final image in ${qualityText}.
+${numberedInstructions}
 
 If the original image was letterboxed (contains colored bars), your primary task is to replace the bars by seamlessly extending the original scene. The final image must completely fill the target aspect ratio without any new borders.`;
     setPrompt(newPrompt);
-  }, [selectedPose, selectedLocation, selectedCameraAngle, selectedClothingStyle, customPose, customLocation, customCameraAngle, customClothingStyle, selectedAspectRatio, selectedBlur, selectedQuality, resizeMode, selectedArtisticStyle, customArtisticStyle]);
+  }, [
+    selectedPose, customPose, 
+    selectedLocation, customLocation, 
+    selectedCameraAngle, customCameraAngle, 
+    selectedClothingStyle, customClothingStyle, 
+    selectedArtisticStyle, customArtisticStyle,
+    selectedHairStyle, customHairStyle,
+    selectedAspectRatio, 
+    selectedBlur, 
+    selectedQuality, 
+    resizeMode
+  ]);
 
   // Effect to format the image whenever the original or aspect ratio changes
   useEffect(() => {
@@ -192,10 +248,21 @@ If the original image was letterboxed (contains colored bars), your primary task
     setIsLoading(true);
     setError(null);
     setGeneratedImage(null);
+    setImageIsSensitive(false);
+    setIsSensitiveContentVisible(false);
 
     try {
-      const result = await editImage(formattedImageForApi.base64, formattedImageForApi.mimeType, prompt);
-      setGeneratedImage(result);
+      const { image, safetyRatings, textResponse } = await editImage(formattedImageForApi.base64, formattedImageForApi.mimeType, prompt);
+      
+      if (image) {
+        setGeneratedImage(image);
+        const isSensitive = isContentSensitive(safetyRatings);
+        setImageIsSensitive(isSensitive);
+      } else {
+        const errorMessage = textResponse ? `Model response: ${textResponse}` : 'No image data found in the API response.';
+        throw new Error(errorMessage);
+      }
+
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan saat membuat gambar.');
@@ -209,7 +276,8 @@ If the original image was letterboxed (contains colored bars), your primary task
     (selectedLocation === 'CUSTOM' && !customLocation.trim()) ||
     (selectedCameraAngle === 'CUSTOM' && !customCameraAngle.trim()) ||
     (selectedClothingStyle === 'CUSTOM' && !customClothingStyle.trim()) ||
-    (selectedArtisticStyle === 'CUSTOM' && !customArtisticStyle.trim());
+    (selectedArtisticStyle === 'CUSTOM' && !customArtisticStyle.trim()) ||
+    (selectedHairStyle === 'CUSTOM' && !customHairStyle.trim());
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-200 font-sans">
@@ -242,6 +310,10 @@ If the original image was letterboxed (contains colored bars), your primary task
               onArtisticStyleChange={setSelectedArtisticStyle}
               customArtisticStyle={customArtisticStyle}
               onCustomArtisticStyleChange={setCustomArtisticStyle}
+              selectedHairStyle={selectedHairStyle}
+              onHairStyleChange={setSelectedHairStyle}
+              customHairStyle={customHairStyle}
+              onCustomHairStyleChange={setCustomHairStyle}
               selectedAspectRatio={selectedAspectRatio}
               onAspectRatioChange={setSelectedAspectRatio}
               selectedBlur={selectedBlur}
@@ -274,7 +346,7 @@ If the original image was letterboxed (contains colored bars), your primary task
               className="w-full flex items-center justify-center bg-purple-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-purple-700 disabled:bg-gray-500 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105 shadow-lg"
             >
               {isLoading ? (
-                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
@@ -289,6 +361,9 @@ If the original image was letterboxed (contains colored bars), your primary task
             isLoading={isLoading}
             generatedImage={generatedImage}
             aspectRatio={selectedAspectRatio}
+            isSensitive={imageIsSensitive}
+            isSensitiveContentVisible={isSensitiveContentVisible}
+            onToggleVisibility={() => setIsSensitiveContentVisible(!isSensitiveContentVisible)}
           />
 
         </div>

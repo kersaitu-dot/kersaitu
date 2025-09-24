@@ -1,5 +1,4 @@
-
-import { GoogleGenAI, Modality } from "@google/genai";
+import { GoogleGenAI, Modality, SafetyRating } from "@google/genai";
 
 const API_KEY = process.env.API_KEY;
 
@@ -9,7 +8,11 @@ if (!API_KEY) {
 
 const ai = new GoogleGenAI({ apiKey: API_KEY });
 
-export async function editImage(base64ImageData: string, mimeType: string, prompt: string): Promise<string> {
+export async function editImage(
+  base64ImageData: string,
+  mimeType: string,
+  prompt: string
+): Promise<{ image: string | null; safetyRatings: SafetyRating[] | undefined; textResponse: string | null }> {
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image-preview',
@@ -31,19 +34,23 @@ export async function editImage(base64ImageData: string, mimeType: string, promp
       },
     });
 
+    let image: string | null = null;
     for (const part of response.candidates?.[0]?.content?.parts || []) {
       if (part.inlineData) {
-        return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+        image = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+        break;
       }
     }
-    
-    // Check if there is text which might indicate an error or refusal from the model
+
     const textResponse = response.text;
-    if (textResponse) {
-        throw new Error(`Model returned a text response instead of an image: ${textResponse}`);
+    const safetyRatings = response.candidates?.[0]?.safetyRatings;
+
+    if (!image && textResponse) {
+        console.warn(`Model returned a text response instead of an image: ${textResponse}`);
     }
 
-    throw new Error('No image data found in the API response.');
+    return { image, safetyRatings, textResponse };
+
   } catch (error) {
     console.error('Error calling Gemini API:', error);
     throw new Error('Gagal berkomunikasi dengan API. Silakan coba lagi.');

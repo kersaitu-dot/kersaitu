@@ -1,5 +1,5 @@
 // Fix: Import all types from the corrected `types.ts` file and remove the redundant `Option` interface.
-import { Pose, Location, CameraAngle, AspectRatio, Option, BlurAmount, ResizeMode, ClothingStyle, PictureQuality, ArtisticStyle } from './types';
+import { Pose, Location, CameraAngle, AspectRatio, Option, BlurAmount, ResizeMode, ClothingStyle, PictureQuality, ArtisticStyle, HairStyle } from './types';
 
 export const POSE_OPTIONS: Option<Pose>[] = [
     { value: Pose.POWER, label: 'Pose Kuat' },
@@ -34,6 +34,11 @@ export const CLOTHING_STYLE_OPTIONS: Option<ClothingStyle>[] = [
     { value: ClothingStyle.FORMAL_SUIT, label: 'Setelan Formal' },
     { value: ClothingStyle.SUMMER_DRESS, label: 'Gaun Musim Panas' },
     { value: ClothingStyle.WINTER_COAT, label: 'Mantel Musim Dingin' }
+];
+
+export const HAIR_STYLE_OPTIONS: Option<HairStyle>[] = [
+    { value: HairStyle.KEEP_ORIGINAL, label: 'Pertahankan Rambut/Jilbab Asli' },
+    { value: HairStyle.AI_CHOICE, label: 'Biarkan AI yang Memutuskan' },
 ];
 
 export const ARTISTIC_STYLE_OPTIONS: Option<ArtisticStyle>[] = [

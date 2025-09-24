@@ -34,6 +34,11 @@ export enum ClothingStyle {
     WINTER_COAT = 'wearing a warm winter coat and scarf'
 }
 
+export enum HairStyle {
+    KEEP_ORIGINAL = 'keep original hair/hijab',
+    AI_CHOICE = 'AI choice for hair/hijab'
+}
+
 export enum ArtisticStyle {
     REALISTIC = 'photorealistic',
     CARTOON = 'cartoon',
